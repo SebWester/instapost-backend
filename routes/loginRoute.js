@@ -5,7 +5,7 @@ const loginRouter = express.Router();
 loginRouter.post("/login", (req, res) => {
   try {
     console.log(req.body);
-    // If ok, redirect to home page/dashboard
+    // If ok, add JWT token and redirect to home page/dashboard
     res.status(200).json({ msg: "Login Ok" });
   } catch (err) {
     console.log(err);
