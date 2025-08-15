@@ -1,8 +1,12 @@
 import express from "express";
 import cors from "cors";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({
@@ -12,14 +16,6 @@ app.use(
   })
 );
 
-// app.use(
-//   cors({
-//     origin: ["exp://192.168.1.211:8081", "http://localhost:8081/"],
-//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-//     allowedHeaders: ["Content-Type"],
-//     // credentials: true,
-//   })
-// );
 app.use(express.json());
 
 // Routers
@@ -27,6 +23,16 @@ import loginRouter from "./routes/loginRoute.js";
 
 app.use("/api", loginRouter);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} 🚀`);
-});
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ Connected to MongoDB Atlas");
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ Failed to connect to MongoDB", err);
+    process.exit(1);
+  });
