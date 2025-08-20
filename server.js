@@ -20,8 +20,10 @@ app.use(express.json());
 
 // Routers
 import loginRouter from "./routes/loginRoute.js";
+import signupRouter from "./routes/signupRoute.js";
 
 app.use("/api", loginRouter);
+app.use("/signup", signupRouter);
 
 mongoose
   .connect(process.env.MONGO_URI)
