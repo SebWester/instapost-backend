@@ -22,16 +22,16 @@ loginRouter.post("/login", async (req, res) => {
     res.status(401).json({ error: "Wrong password" });
   }
 
+  const token = jwt.sign(
+    {
+      name: user.name,
+    },
+    token_key,
+    { expiresIn: "1h" }
+  );
+
   try {
     if (platform === "web") {
-      const token = jwt.sign(
-        {
-          name: user.name,
-        },
-        token_key,
-        { expiresIn: "1h" }
-      );
-
       // Change later
       res.cookie("token", token, {
         httpOnly: true,
@@ -41,7 +41,7 @@ loginRouter.post("/login", async (req, res) => {
       res.status(200).json({ token: token });
     } else {
       console.log("Welcome");
-      res.status(200).json({ token: true });
+      res.status(200).json({ token: token });
     }
   } catch (err) {
     console.log(err);
