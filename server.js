@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -10,18 +11,26 @@ const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({
-    origin: "*",
+    origin: "http://localhost:8081",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
+    credentials: true,
   })
 );
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Routers
 import loginRouter from "./routes/loginRoute.js";
+import signupRouter from "./routes/signupRoute.js";
+import logoutRouter from "./routes/logoutRoute.js";
+import authRouter from "./routes/authRoute.js";
 
 app.use("/api", loginRouter);
+app.use("/signup", signupRouter);
+app.use("/logout", logoutRouter);
+app.use("/gate", authRouter);
 
 mongoose
   .connect(process.env.MONGO_URI)
