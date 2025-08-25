@@ -13,6 +13,7 @@ loginRouter.post("/login", async (req, res) => {
   const { email, password, platform } = req.body;
 
   const user = await User.findOne({ email: email });
+  console.log(user);
   if (user === null) {
     res.status(404).json({ error: "Wrong username" });
   }
@@ -47,6 +48,17 @@ loginRouter.post("/login", async (req, res) => {
     console.log(err);
     res.status(500).json({ error: err });
   }
+});
+
+loginRouter.post("/login/userdata", async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email: email });
+  if (user === null) {
+    res.status(404).json({ error: "Wrong username" });
+  }
+
+  res.status(200).json({ userData: user });
 });
 
 export default loginRouter;
