@@ -7,7 +7,6 @@ const authRouter = express.Router();
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET_KEY;
 
-// Endpoint för att kolla token / användarinfo
 authRouter.get("/token", (req, res) => {
   const token = req.cookies.token;
 
