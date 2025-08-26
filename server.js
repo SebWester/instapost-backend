@@ -25,11 +25,15 @@ app.use(cookieParser());
 import loginRouter from "./routes/loginRoute.js";
 import signupRouter from "./routes/signupRoute.js";
 import logoutRouter from "./routes/logoutRoute.js";
+import postRouter from "./routes/postRoute.js";
+import searchRouter from "./routes/searchRoute.js";
 import authRouter from "./routes/authRoute.js";
 
 app.use("/api", loginRouter);
 app.use("/signup", signupRouter);
 app.use("/logout", logoutRouter);
+app.use("/posts", postRouter);
+app.use("/search", searchRouter);
 app.use("/gate", authRouter);
 
 mongoose
