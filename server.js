@@ -3,6 +3,8 @@ import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import fileUpload from "express-fileupload";
+import path from "path";
 
 dotenv.config();
 
@@ -13,13 +15,14 @@ app.use(
   cors({
     origin: "http://localhost:8081",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(fileUpload());
 
 // Routers
 import loginRouter from "./routes/loginRoute.js";
@@ -37,6 +40,7 @@ app.use("/posts", postRouter);
 app.use("/search", searchRouter);
 app.use("/gate", authRouter);
 app.use("/api/users", updateProfil);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 mongoose
   .connect(process.env.MONGO_URI)
