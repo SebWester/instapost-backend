@@ -17,7 +17,6 @@ loginRouter.post("/login", async (req, res) => {
   const passwordOk = await compare(password, user.password);
   if (!passwordOk) return res.status(401).json({ error: "Wrong password" });
 
-
   const token = jwt.sign(
     {
       id: user._id,
@@ -27,37 +26,24 @@ loginRouter.post("/login", async (req, res) => {
     { expiresIn: "1h" }
   );
 
-  try {
-    if (platform === "web") {
-      // Change later
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-      });
-      res.status(200).json({ token: token });
-    } else {
-      console.log("Welcome");
-      res.status(200).json({ token: token });
-    }
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: err });
-  }
-});
-
-
   const responsePayload = { token, userData: user };
 
-  if (platform === "web") {
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-    });
-  }
+  try {
+    if (platform === "web") {
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // 🔒 säkrare i prod
+        sameSite: "lax",
+      });
+    } else {
+      console.log("Welcome");
+    }
 
-  res.status(200).json(responsePayload);
+    return res.status(200).json(responsePayload);
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: err });
+  }
 });
 
 export default loginRouter;
