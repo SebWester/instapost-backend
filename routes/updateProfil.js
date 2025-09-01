@@ -19,12 +19,24 @@ router.post("/update-profile", async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.id;
     const { name, bio, profilePic } = req.body;
+
+    let profileImageUrl;
+
+    if (req.files?.profilePic) {
+      const file = req.files.profilePic;
+      const fileName = `${userId}_${Date.now()}_${file.name}`;
+      const uploadPath = path.join(__dirname, "../uploads", fileName);
+
+      await file.mv(uploadPath);
+      profileImageUrl = `http://localhost:3000/uploads/${fileName}`;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
         name,
         bio,
-        profileImage: profilePic,
+        ...(profileImageUrl && { profileImage: profileImageUrl }),
       },
       { new: true }
     );
