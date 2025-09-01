@@ -36,6 +36,7 @@ import postRouter from "./routes/postRoute.js";
 import searchRouter from "./routes/searchRoute.js";
 import authRouter from "./routes/authRoute.js";
 import updateProfil from "./routes/updateProfil.js";
+import userRoute from "./routes/userRoute.js";
 
 app.use("/api", loginRouter);
 app.use("/signup", signupRouter);
@@ -45,6 +46,7 @@ app.use("/search", searchRouter);
 app.use("/gate", authRouter);
 app.use("/api/users", updateProfil);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/api/users", userRoute);
 
 mongoose
   .connect(process.env.MONGO_URI)
