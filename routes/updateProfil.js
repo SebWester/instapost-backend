@@ -1,61 +1,79 @@
 import express from "express";
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
 import path from "path";
+import fs from "fs";
 import User from "../models/User.js";
-
-dotenv.config();
-const JWT_SECRET = process.env.JWT_SECRET_KEY;
+import authenticateToken from "../middleware/authToken.js";
 
 const router = express.Router();
 
-router.post("/update-profile", async (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ error: "Ingen token hittades" });
-  }
-
+router.post("/update-profile", authenticateToken, async (req, res) => {
   try {
-    // Verifiera token
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const userId = decoded.id;
+    console.log("Request body:", req.body);
+    console.log("Request files:", req.files);
+    console.log("Request headers:", req.headers);
 
-    // Hämta textfält säkert
-    const name = req.body?.name || "";
-    const bio = req.body?.bio || "";
+    const user = req.user;
+    const { name, bio } = req.body;
 
     let profileImageUrl;
 
-    // Hämta fil om en profilbild skickas
-    if (req.files?.profilePic) {
-      const file = req.files.profilePic;
-      const fileName = `${userId}_${Date.now()}_${file.name}`;
-      const uploadPath = path.join(__dirname, "../uploads", fileName);
+    if (req.files && req.files.file) {
+      const uploadedFile = req.files.file;
+      console.log("Uploaded file details:", {
+        name: uploadedFile.name,
+        size: uploadedFile.size,
+        mimetype: uploadedFile.mimetype,
+      });
 
-      await file.mv(uploadPath);
+      const uploadDir = path.join(process.cwd(), "uploads");
+
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const timestamp = Date.now();
+      const fileExtension = path.extname(uploadedFile.name) || ".jpg";
+      const fileName = `profile-${timestamp}${fileExtension}`;
+      const uploadPath = path.join(uploadDir, fileName);
+
+      console.log("Upload path:", uploadPath);
+
+      await new Promise((resolve, reject) => {
+        uploadedFile.mv(uploadPath, (err) => {
+          if (err) {
+            console.error("File move error:", err);
+            reject(err);
+          } else {
+            console.log("File moved successfully");
+            resolve();
+          }
+        });
+      });
+
       profileImageUrl = `http://localhost:3000/uploads/${fileName}`;
+      console.log("Profile image URL:", profileImageUrl);
     }
 
-    // Uppdatera användaren i databasen
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      {
-        name,
-        bio,
-        ...(profileImageUrl && { profileImage: profileImageUrl }),
-      },
-      { new: true }
-    ).select("-password");
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (bio) updateData.bio = bio;
+    if (profileImageUrl) updateData.profileImage = profileImageUrl;
+
+    console.log("Update data:", updateData);
+
+    const updatedUser = await User.findByIdAndUpdate(user._id, updateData, {
+      new: true,
+    });
 
     if (!updatedUser) {
       return res.status(404).json({ error: "Användare hittades inte" });
     }
 
+    console.log("User updated successfully:", updatedUser.profileImage);
     res.json({ success: true, user: updatedUser });
   } catch (err) {
-    console.error("JWT/DB error:", err);
-    res.status(500).json({ error: "Ogiltlig token eller fel i databasen" });
+    console.error("Error updating profile:", err);
+    res.status(500).json({ error: "Serverfel", details: err.message });
   }
 });
 
