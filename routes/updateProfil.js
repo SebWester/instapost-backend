@@ -1,6 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import path from "path";
 import User from "../models/User.js";
 
 dotenv.config();
@@ -16,12 +17,17 @@ router.post("/update-profile", async (req, res) => {
   }
 
   try {
+    // Verifiera token
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.id;
-    const { name, bio, profilePic } = req.body;
+
+    // Hämta textfält säkert
+    const name = req.body?.name || "";
+    const bio = req.body?.bio || "";
 
     let profileImageUrl;
 
+    // Hämta fil om en profilbild skickas
     if (req.files?.profilePic) {
       const file = req.files.profilePic;
       const fileName = `${userId}_${Date.now()}_${file.name}`;
@@ -31,6 +37,7 @@ router.post("/update-profile", async (req, res) => {
       profileImageUrl = `http://localhost:3000/uploads/${fileName}`;
     }
 
+    // Uppdatera användaren i databasen
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
@@ -39,7 +46,7 @@ router.post("/update-profile", async (req, res) => {
         ...(profileImageUrl && { profileImage: profileImageUrl }),
       },
       { new: true }
-    );
+    ).select("-password");
 
     if (!updatedUser) {
       return res.status(404).json({ error: "Användare hittades inte" });
@@ -48,7 +55,7 @@ router.post("/update-profile", async (req, res) => {
     res.json({ success: true, user: updatedUser });
   } catch (err) {
     console.error("JWT/DB error:", err);
-    res.status(401).json({ error: "Ogiltlig token eller fel i databasen" });
+    res.status(500).json({ error: "Ogiltlig token eller fel i databasen" });
   }
 });
 
