@@ -10,4 +10,7 @@ postRouter.get("/", (req, res) => {
   }
 });
 
+// New post
+// postRouter.post("/new");
+
 export default postRouter;
