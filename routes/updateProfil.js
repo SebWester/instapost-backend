@@ -1,69 +1,80 @@
-// routes/updateProfil.js
 import express from "express";
 import path from "path";
 import fs from "fs";
-import multer from "multer";
 import User from "../models/User.js";
 import authenticateToken from "../middleware/authToken.js";
 
 const router = express.Router();
 
-// Skapa uploads-mapp om den inte finns
-const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-  console.log("✅ Skapade uploads-mappen");
-}
+router.post("/update-profile", authenticateToken, async (req, res) => {
+  try {
+    console.log("Request body:", req.body);
+    console.log("Request files:", req.files);
+    console.log("Request headers:", req.headers);
 
-// Multer storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const filename = `${Date.now()}-${file.fieldname}${ext}`;
-    console.log("📄 Filnamn som sparas:", filename);
-    cb(null, filename);
-  },
-});
+    const user = req.user;
+    const { name, bio } = req.body;
 
-const upload = multer({ storage });
+    let profileImageUrl;
 
-// Refaktorerad route
-router.post(
-  "/update-profile",
-  authenticateToken,
-  upload.single("profilePic"),
-  async (req, res) => {
-    try {
-      const user = req.user; // Från middleware
-      const { name, bio } = req.body;
+    if (req.files && req.files.file) {
+      const uploadedFile = req.files.file;
+      console.log("Uploaded file details:", {
+        name: uploadedFile.name,
+        size: uploadedFile.size,
+        mimetype: uploadedFile.mimetype,
+      });
 
-      let profileImageUrl = undefined;
-      if (req.file) {
-        profileImageUrl = `http://localhost:3000/uploads/${req.file.filename}`;
-        console.log("🖼️ Profilbild-URL:", profileImageUrl);
+      const uploadDir = path.join(process.cwd(), "uploads");
+
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
       }
 
-      const updatedUser = await User.findByIdAndUpdate(
-        user._id,
-        {
-          ...(name !== undefined && { name }),
-          ...(bio !== undefined && { bio }),
-          ...(profileImageUrl && { profileImage: profileImageUrl }),
-        },
-        { new: true }
-      ).select("-password");
+      const timestamp = Date.now();
+      const fileExtension = path.extname(uploadedFile.name) || ".jpg";
+      const fileName = `profile-${timestamp}${fileExtension}`;
+      const uploadPath = path.join(uploadDir, fileName);
 
-      if (!updatedUser) {
-        return res.status(404).json({ error: "Användare hittades inte" });
-      }
+      console.log("Upload path:", uploadPath);
 
-      return res.json({ success: true, user: updatedUser });
-    } catch (err) {
-      console.error("🔥 Fel vid uppdatering av profil:", err);
-      return res.status(500).json({ error: "Fel vid uppdatering av profil" });
+      await new Promise((resolve, reject) => {
+        uploadedFile.mv(uploadPath, (err) => {
+          if (err) {
+            console.error("File move error:", err);
+            reject(err);
+          } else {
+            console.log("File moved successfully");
+            resolve();
+          }
+        });
+      });
+
+      profileImageUrl = `http://localhost:3000/uploads/${fileName}`;
+      console.log("Profile image URL:", profileImageUrl);
     }
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (bio) updateData.bio = bio;
+    if (profileImageUrl) updateData.profileImage = profileImageUrl;
+
+    console.log("Update data:", updateData);
+
+    const updatedUser = await User.findByIdAndUpdate(user._id, updateData, {
+      new: true,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "Användare hittades inte" });
+    }
+
+    console.log("User updated successfully:", updatedUser.profileImage);
+    res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error("Error updating profile:", err);
+    res.status(500).json({ error: "Serverfel", details: err.message });
   }
-);
+});
 
 export default router;
