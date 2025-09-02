@@ -15,14 +15,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS configuration - lägg till fler origins för React Native
 app.use(
   cors({
     origin: [
       "http://localhost:8081",
       "http://localhost:3000",
-      "http://192.168.1.140:8081", // Lägg till din lokala IP för React Native
-      "exp://192.168.1.100:8081", // Expo format
+      "http://192.168.1.140:8081",
+      "http://192.168.1.140:3000", // Lägg till din lokala IP för React Native
+      "exp://192.168.1.140:8081",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -43,7 +43,7 @@ app.use(
     responseOnLimit: "File size limit has been reached",
     useTempFiles: true,
     tempFileDir: path.join(__dirname, "tmp"),
-    debug: process.env.NODE_ENV !== "production", // Debug i development
+    debug: process.env.NODE_ENV !== "production",
   })
 );
 
