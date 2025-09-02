@@ -1,21 +1,9 @@
 import express from "express";
-import multer from "multer";
 import path from "path";
+import fs from "fs";
+import Post from "../models/Posts.js";
 
 const postRouter = express.Router();
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // spara här
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const randomName = Date.now() + "-" + Math.round(Math.random() * 1e9) + ext;
-    cb(null, randomName);
-  },
-});
-
-const upload = multer({ storage });
 
 postRouter.get("/", (req, res) => {
   try {
@@ -26,17 +14,44 @@ postRouter.get("/", (req, res) => {
 });
 
 // New post
-postRouter.post("/new", upload.single("image"), (req, res) => {
-  const { text, userId, username } = req.body;
-  const image = req.file;
-  console.log(req.body);
+postRouter.post("/new", async (req, res) => {
   try {
-    res.json({
-      message: "Post saved",
-      data: { text, userId, username, image },
+    const { caption, userId, username, imageBase64 } = req.body;
+    let imageUrl;
+
+    if (imageBase64) {
+      // imageBase64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..."
+      const matches = imageBase64.match(/^data:(.+);base64,(.+)$/);
+      if (!matches) throw new Error("Invalid base64 string");
+
+      const mimeType = matches[1];
+      const ext = mimeType.split("/")[1] || "jpg";
+      const data = Buffer.from(matches[2], "base64");
+
+      const uploadDir = path.join(process.cwd(), "uploads");
+      if (!fs.existsSync(uploadDir))
+        fs.mkdirSync(uploadDir, { recursive: true });
+
+      const fileName = `post-${Date.now()}.${ext}`;
+      const filePath = path.join(uploadDir, fileName);
+
+      fs.writeFileSync(filePath, data);
+      imageUrl = `http://localhost:3000/uploads/${fileName}`;
+    }
+
+    const newPost = new Post({
+      caption,
+      userId,
+      username,
+      imageUrl,
+      createdAt: new Date(),
     });
+
+    await newPost.save();
+    res.json({ success: true, post: newPost });
   } catch (err) {
-    console.error("I HAVE ESCAPED FROM THE POLICE!", err);
+    console.error("Error creating post:", err);
+    res.status(500).json({ error: "Serverfel", details: err.message });
   }
 });
 
