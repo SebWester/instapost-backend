@@ -2,10 +2,10 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,18 +15,45 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// CORS configuration - lägg till fler origins för React Native
 app.use(
   cors({
-    origin: "http://localhost:8081",
+    origin: [
+      "http://localhost:8081",
+      "http://localhost:3000",
+      "http://192.168.68.105:8081", // Lägg till din lokala IP för React Native
+      "exp://192.168.1.100:8081", // Expo format
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
-app.use(express.json());
-app.use(cookieParser());
-app.use(fileUpload());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+app.use(
+  fileUpload({
+    createParentPath: true,
+    limits: {
+      fileSize: 20 * 1024 * 1024,
+    },
+    abortOnLimit: false,
+    responseOnLimit: "File size limit has been reached",
+    useTempFiles: true,
+    tempFileDir: path.join(__dirname, "tmp"),
+    debug: process.env.NODE_ENV !== "production", // Debug i development
+  })
+);
+
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log("📁 Created uploads directory");
+}
+
+app.use("/uploads", express.static(uploadsDir));
 
 // Routers
 import loginRouter from "./routes/loginRoute.js";
@@ -45,7 +72,6 @@ app.use("/posts", postRouter);
 app.use("/search", searchRouter);
 app.use("/gate", authRouter);
 app.use("/api/users", updateProfil);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/users", userRoute);
 
 mongoose
