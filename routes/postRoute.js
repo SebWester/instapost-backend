@@ -6,9 +6,6 @@ import Post from "../models/Posts.js"; // FIX: Kontrollera att det är litet 'p'
 
 const postRouter = express.Router();
 
-
-
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -34,25 +31,23 @@ postRouter.get("/", async (req, res) => {
 
 // Gilla ett inlägg
 postRouter.post("/:id/like", async (req, res) => {
-
   try {
     const postId = req.params.id;
     const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ error: "Inlägg hittades inte" });
     }
-    
+
     // Incrementa likes och spara
     post.likes = (post.likes || 0) + 1;
     await post.save();
-    
+
     res.status(200).json(post);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Fel vid gillning av inlägg" });
   }
 });
-
 
 // Skapa nytt inlägg med filuppladdning
 postRouter.post("/new", upload.single("image"), (req, res) => {
@@ -92,7 +87,7 @@ postRouter.post("/new", upload.single("image"), (req, res) => {
       createdAt: new Date(),
     });
 
-    await newPost.save();
+    newPost.save();
     res.json({ success: true, post: newPost });
   } catch (err) {
     console.error("Error creating post:", err);
