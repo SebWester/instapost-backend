@@ -6,6 +6,16 @@ import authenticateToken from "../middleware/authToken.js";
 
 const router = express.Router();
 
+router.get("/", async (req, res) => {
+    try {
+        const users = await User.find({});
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("Kunde inte hämta användare:", error);
+        res.status(500).json({ error: "Serverfel vid hämtning av användare" });
+    }
+});
+
 router.get("/profile", authenticateToken, async (req, res) => {
   try {
     const user = req.user;
@@ -17,6 +27,7 @@ router.get("/profile", authenticateToken, async (req, res) => {
     const following = await Follow.find({ followerId: user._id }).populate(
       "targetUserId"
     );
+
 
     res.json({
       user: {
