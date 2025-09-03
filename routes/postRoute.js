@@ -8,8 +8,6 @@ import Like from "../models/Like.js";
 const postRouter = express.Router();
 
 
-
-/*
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -35,7 +33,6 @@ postRouter.get("/", async (req, res) => {
 
 // Gilla eller ogilla ett inlägg
 postRouter.post("/:id/like", async (req, res) => {
-
   try {
     const postId = req.params.id;
     const {userId} = req.body; 
@@ -46,6 +43,7 @@ postRouter.post("/:id/like", async (req, res) => {
     if (!post) {
       return res.status(404).json({ error: "Inlägg hittades inte" });
     }
+
     
     if (like) {
       await Like.findByIdAndDelete(Like._id); 
@@ -62,12 +60,12 @@ postRouter.post("/:id/like", async (req, res) => {
     res.status(200).json({likes: post.likes, isLiked}); 
     
 
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Fel vid gillning av inlägg" });
   }
 });
-
 
 // Skapa nytt inlägg med filuppladdning
 postRouter.post("/new", async (req, res) => {
@@ -98,8 +96,10 @@ postRouter.post("/new", async (req, res) => {
 
     });
 
+
     await newPost.save();
     res.status(201).json({ success: true, post: newPost });
+
   } catch (err) {
     console.error("Error creating post:", err);
     res.status(500).json({ error: "Serverfel", details: err.message });
