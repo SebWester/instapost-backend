@@ -20,9 +20,9 @@ app.use(
     origin: [
       "http://localhost:8081",
       "http://localhost:3000",
-      "http://192.168.68.105:8081",
-      "http://192.168.68.105:3000", // Lägg till din lokala IP för React Native
-      "exp://192.168.68.105:8081",
+      "http://172.20.10.2:8081",
+      "http://172.20.10.2:3000", // Lägg till din lokala IP för React Native
+      "exp://172.20.10.2:8081",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
