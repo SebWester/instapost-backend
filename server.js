@@ -24,7 +24,6 @@ app.use(
       "http://172.20.10.2:8081",
       "http://172.20.10.2:3000", // Lägg till din lokala IP för React Native
       "exp://172.20.10.2:8081",
-
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -73,7 +72,7 @@ app.use("/logout", logoutRouter);
 app.use("/posts", postRouter);
 app.use("/search", searchRouter);
 app.use("/gate", authRouter);
-app.use("/api/users", updateProfil);
+app.use("/api/users/update", updateProfil);
 app.use("/api/users", userRoute);
 
 mongoose
