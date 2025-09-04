@@ -8,7 +8,15 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const users = await User.find({});
+    const users = await User.find(
+      {},
+      {
+        name: 1,
+        username: 1,
+        profileImage: 1,
+        _id: 1,
+      }
+    );
     res.status(200).json(users);
   } catch (error) {
     console.error("Kunde inte hämta användare:", error);
