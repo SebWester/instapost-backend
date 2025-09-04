@@ -69,6 +69,7 @@ postRouter.post("/new", async (req, res) => {
     const { caption, userId, username, imageBase64 } = req.body;
     let imageUrl = null;
 
+
     if (imageBase64) {
       // Generera unikt filnamn
       const fileName = `${uuidv4()}.png`;
@@ -83,6 +84,7 @@ postRouter.post("/new", async (req, res) => {
 
       imageUrl = `http://localhost:3000/uploads/${fileName}`;
       // imageUrl = `http://192.168.1.140:3000/uploads/${fileName}`;
+
     }
 
     const newPost = new Post({
