@@ -9,7 +9,8 @@ const postRouter = express.Router();
 
 postRouter.get("/", async (req, res) => {
   try {
-    res.status(200).json({ status: "No posts to show" });
+    const posts = await Post.find({});
+    res.status(200).json(posts);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Fel vid hämtning av inlägg" });
