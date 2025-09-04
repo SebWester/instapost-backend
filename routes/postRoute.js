@@ -52,18 +52,37 @@ postRouter.post("/:id/like", async (req, res) => {
 // Skapa nytt inlägg med filuppladdning
 postRouter.post("/new", async (req, res) => {
   try {
-    const { caption, userId, username } = req.body;
+    // const { caption, userId, username } = req.body;
+    // let imageUrl = null;
+
+    // // Kontrollera om en fil laddats upp
+    // if (req.files && req.files.image) {
+    //   const image = req.files.image;
+    //   const uploadPath = path.join(process.cwd(), "uploads", image.name);
+
+    //   // Flytta filen till mappen uploads
+    //   await image.mv(uploadPath);
+
+    //   imageUrl = `http://192.168.1.140:3000/uploads/${image.name}`;
+    // }
+
+    const { caption, userId, username, imageBase64 } = req.body;
     let imageUrl = null;
 
-    // Kontrollera om en fil laddats upp
-    if (req.files && req.files.image) {
-      const image = req.files.image;
-      const uploadPath = path.join(process.cwd(), "uploads", image.name);
+    if (imageBase64) {
+      // Generera unikt filnamn
+      const fileName = `${uuidv4()}.png`;
+      const uploadPath = path.join(process.cwd(), "uploads", fileName);
 
-      // Flytta filen till mappen uploads
-      await image.mv(uploadPath);
+      // Ta bort "data:image/png;base64,"-delen
+      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, "base64");
 
-      imageUrl = `http://192.168.1.140:3000/uploads/${image.name}`;
+      // Spara filen på servern
+      fs.writeFileSync(uploadPath, buffer);
+
+      imageUrl = `http://localhost:3000/uploads/${fileName}`;
+      // imageUrl = `http://192.168.1.140:3000/uploads/${fileName}`;
     }
 
     const newPost = new Post({
@@ -78,26 +97,6 @@ postRouter.post("/new", async (req, res) => {
   } catch (err) {
     console.error("Error creating post:", err);
     res.status(500).json({ error: "Serverfel", details: err.message });
-  }
-});
-
-postRouter.post("/:id/comment", async (req, res) => {
-  try {
-    const postId = req.params.id;
-    const { comment, userId, username } = req.body;
-
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ error: "Inlägg hittades inte" });
-    }
-
-    post.comments.push({ text: comment, userId, username });
-    await post.save();
-
-    res.status(201).json(post);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Fel vid spara av kommentar" });
   }
 });
 
