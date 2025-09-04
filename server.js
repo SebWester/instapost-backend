@@ -65,6 +65,7 @@ import searchRouter from "./routes/searchRoute.js";
 import authRouter from "./routes/authRoute.js";
 import updateProfil from "./routes/updateProfil.js";
 import userRoute from "./routes/userRoute.js";
+import followRouter from "./routes/followRoute.js";
 
 app.use("/api", loginRouter);
 app.use("/signup", signupRouter);
@@ -74,6 +75,7 @@ app.use("/search", searchRouter);
 app.use("/gate", authRouter);
 app.use("/api/users/update", updateProfil);
 app.use("/api/users", userRoute);
+app.use("/api/users/follow", followRouter);
 
 mongoose
   .connect(process.env.MONGO_URI)
