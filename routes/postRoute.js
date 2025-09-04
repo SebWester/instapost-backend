@@ -10,7 +10,7 @@ const postRouter = express.Router();
 
 postRouter.get("/", async (req, res) => {
   try {
-    const posts = await Post.find({});
+    const posts = await Post.find({}).sort({ createdAt: -1 });
     res.status(200).json(posts);
   } catch (err) {
     console.error(err);
