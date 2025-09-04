@@ -4,6 +4,7 @@ import path from "path";
 import Post from "../models/Posts.js";
 import fs from "fs";
 import Like from "../models/Like.js";
+import User from "../models/User.js"
 
 const postRouter = express.Router();
 
@@ -52,7 +53,7 @@ postRouter.post("/:id/like", async (req, res) => {
 // Skapa nytt inlägg med filuppladdning
 postRouter.post("/new", async (req, res) => {
   try {
-    // const { caption, userId, username } = req.body;
+    //const { caption, userId, username } = req.body;
     // let imageUrl = null;
 
     // // Kontrollera om en fil laddats upp
@@ -66,8 +67,13 @@ postRouter.post("/new", async (req, res) => {
     //   imageUrl = `http://192.168.1.140:3000/uploads/${image.name}`;
     // }
 
-    const { caption, userId, username, imageBase64 } = req.body;
+    const { caption, userId, username, imageBase64, profileImageUrl } = req.body;
     let imageUrl = null;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "Användare hittades inte"});
+    }
 
 
     if (imageBase64) {
@@ -90,7 +96,8 @@ postRouter.post("/new", async (req, res) => {
     const newPost = new Post({
       caption,
       userId,
-      username,
+      username: user.name,
+      profileImageUrl: user.profileImage,
       imageUrl,
     });
 
