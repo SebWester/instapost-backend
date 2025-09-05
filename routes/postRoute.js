@@ -1,0 +1,149 @@
+import express from "express";
+import { v4 as uuidv4 } from "uuid";
+import path from "path";
+import Post from "../models/Posts.js";
+import fs from "fs";
+import dotenv from "dotenv";
+import Like from "../models/Like.js";
+import User from "../models/User.js";
+
+const postRouter = express.Router();
+dotenv.config();
+
+postRouter.get("/", async (req, res) => {
+  try {
+    const posts = await Post.find({}).sort({ createdAt: -1 });
+    res.status(200).json(posts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Fel vid hämtning av inlägg" });
+  }
+});
+
+// Gilla eller ogilla ett inlägg
+
+postRouter.post("/:id/toggle-like", async (req, res) => {
+    try {
+        const postID = req.params.id;
+        const { userID } = req.body;
+
+        const like = await Like.findOne({ userID, postID });
+        let updatedPost;
+        let message;
+        let isLiked;
+
+        if (like) {
+            // Ogilla
+            await Like.findByIdAndDelete(like._id);
+            updatedPost = await Post.findByIdAndUpdate(postID, { $inc: { likes: -1 } }, { new: true });
+            message = "Inlägget ogillades";
+            isLiked = false;
+        } else {
+            // Gilla
+            const newLike = new Like({ userID, postID });
+            await newLike.save();
+            updatedPost = await Post.findByIdAndUpdate(postID, { $inc: { likes: 1 } }, { new: true });
+            message = "Inlägget gillades";
+            isLiked = true;
+        }
+
+        res.status(200).json({ likes: updatedPost.likes, message: message });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Fel vid hantering av gillning" });
+    }
+});
+
+// Hämta alla inlägg som en specifik användare har gillat
+postRouter.get("/likes/:userId", async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const likedPosts = await Like.find({ userID: userId }).select("postID");
+        const likedPostIds = likedPosts.map(like => like.postID);
+        res.status(200).json(likedPostIds);
+    } catch (err) {
+        console.error("Fel vid hämtning av gillade inlägg:", err);
+        res.status(500).json({ error: "Kunde inte hämta gillade inlägg" });
+    }
+});
+
+postRouter.post("/:id/comment", async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const { comment, userId, username} = req.body;
+        
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ error: "Inlägget hittades inte" });
+        }
+        
+        const newComment = {
+            text: comment,
+            username: username,
+            userId: userId
+        };
+        
+        post.comments.push(newComment);
+        await post.save();
+        
+        res.status(201).json({ 
+            message: "Kommentar lades till", 
+            comments: post.comments 
+        });
+        
+    } catch (err) {
+        console.error("Fel vid kommentar:", err);
+        res.status(500).json({ error: "Kunde inte lägga till kommentar" });
+    }
+});
+
+
+
+// Skapa nytt inlägg med filuppladdning
+postRouter.post("/new", async (req, res) => {
+  try {
+
+
+    const { caption, userId, username, imageBase64, profileImageUrl } =
+      req.body;
+    let imageUrl = null;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "Användare hittades inte" });
+    }
+
+    if (imageBase64) {
+      // Generera unikt filnamn
+      const fileName = `${uuidv4()}.png`;
+      const uploadPath = path.join(process.cwd(), "uploads", fileName);
+
+      // Ta bort "data:image/png;base64,"-delen
+      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, "base64");
+
+      // Spara filen på servern
+      fs.writeFileSync(uploadPath, buffer);
+
+      // imageUrl = `http://localhost:3000/uploads/${fileName}`;
+      imageUrl = process.env.IP + fileName;
+    }
+
+    const newPost = new Post({
+      caption,
+      userId,
+      username: user.name,
+      profileImageUrl: user.profileImage,
+      imageUrl,
+    });
+
+    await newPost.save();
+    res.status(201).json({ success: true, post: newPost });
+  } catch (err) {
+    console.error("Error creating post:", err);
+    res.status(500).json({ error: "Serverfel", details: err.message });
+  }
+});
+
+export default postRouter;
