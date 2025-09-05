@@ -3,10 +3,12 @@ import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import Post from "../models/Posts.js";
 import fs from "fs";
+import dotenv from "dotenv";
 import Like from "../models/Like.js";
-import User from "../models/User.js"
+import User from "../models/User.js";
 
 const postRouter = express.Router();
+dotenv.config();
 
 postRouter.get("/", async (req, res) => {
   try {
@@ -67,14 +69,14 @@ postRouter.post("/new", async (req, res) => {
     //   imageUrl = `http://192.168.1.140:3000/uploads/${image.name}`;
     // }
 
-    const { caption, userId, username, imageBase64, profileImageUrl } = req.body;
+    const { caption, userId, username, imageBase64, profileImageUrl } =
+      req.body;
     let imageUrl = null;
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: "Användare hittades inte"});
+      return res.status(404).json({ error: "Användare hittades inte" });
     }
-
 
     if (imageBase64) {
       // Generera unikt filnamn
@@ -88,9 +90,8 @@ postRouter.post("/new", async (req, res) => {
       // Spara filen på servern
       fs.writeFileSync(uploadPath, buffer);
 
-      imageUrl = `http://localhost:3000/uploads/${fileName}`;
-      // imageUrl = `http://192.168.1.140:3000/uploads/${fileName}`;
-
+      // imageUrl = `http://localhost:3000/uploads/${fileName}`;
+      imageUrl = process.env.IP + fileName;
     }
 
     const newPost = new Post({
