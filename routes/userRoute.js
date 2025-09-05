@@ -59,6 +59,46 @@ router.get("/profile", authenticateToken, async (req, res) => {
   }
 });
 
+router.get("/name/:name", authenticateToken, async (req, res) => {
+  try {
+    const { name } = req.params;
+
+    const user = await User.findOne({ name });
+    if (!user) {
+      return res.status(404).json({ error: "Användare hittades inte" });
+    }
+
+    const posts = await Post.find({ userId: user._id }).sort({ createdAt: -1 });
+    const followers = await Follow.find({ targetUserId: user._id }).populate(
+      "followerId"
+    );
+    const following = await Follow.find({ followerId: user._id }).populate(
+      "targetUserId"
+    );
+
+    res.json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        bio: user.bio,
+        profileImage: user.profileImage,
+        posts: posts.map((post) => ({
+          _id: post._id,
+          imageUrl: post.imageUrl,
+          caption: post.caption,
+          createdAt: post.createdAt,
+        })),
+        followers: followers.map((f) => f.followerId),
+        following: following.map((f) => f.targetUserId),
+      },
+    });
+  } catch (err) {
+    console.error("Fel vid hämtning av användare med username:", err);
+    res.status(500).json({ error: "Fel vid hämtning av användare" });
+  }
+});
+
 router.get("/:id", authenticateToken, async (req, res) => {
   try {
     const userId = req.params.id;
