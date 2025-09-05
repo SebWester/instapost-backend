@@ -26,6 +26,7 @@ const postSchema = new mongoose.Schema({
     
     likes: {
       type: Number,
+      ref:'User', 
       default: 0,
     },
     
