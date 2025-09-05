@@ -19,38 +19,7 @@ postRouter.get("/", async (req, res) => {
 });
 
 // Gilla eller ogilla ett inlägg
-postRouter.post("/:id/like", async (req, res) => {
-  try {
-    const postID = req.params.id;
-    const { userID } = req.body;
 
-   const existingLike = await Like.findOne({ userID, postID });
-
-        if (existingLike) {
-            return res.status(409).json({ error: "Inlägget är redan gillat" });
-        }
-
-        const newLike = new Like({ userID, postID });
-        await newLike.save();
-
-        const updatedPost = await Post.findByIdAndUpdate(
-            postID,
-            { $inc: { likes: 1 } },
-            { new: true }
-        );
-
-        res.status(200).json({ 
-            likes: updatedPost.likes, 
-            isLiked: true, 
-            message: "Inlägget gillades" 
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Fel vid gillning av inlägg" });
-    }
-});
-
-// OGILLA ett inlägg
 postRouter.post("/:id/toggle-like", async (req, res) => {
     try {
         const postID = req.params.id;
@@ -59,24 +28,41 @@ postRouter.post("/:id/toggle-like", async (req, res) => {
         const like = await Like.findOne({ userID, postID });
         let updatedPost;
         let message;
+        let isLiked;
 
         if (like) {
             // Ogilla
             await Like.findByIdAndDelete(like._id);
             updatedPost = await Post.findByIdAndUpdate(postID, { $inc: { likes: -1 } }, { new: true });
             message = "Inlägget ogillades";
+            isLiked = false;
         } else {
             // Gilla
             const newLike = new Like({ userID, postID });
             await newLike.save();
             updatedPost = await Post.findByIdAndUpdate(postID, { $inc: { likes: 1 } }, { new: true });
             message = "Inlägget gillades";
+            isLiked = true;
         }
 
         res.status(200).json({ likes: updatedPost.likes, message: message });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Fel vid hantering av gillning" });
+    }
+});
+
+// Hämta alla inlägg som en specifik användare har gillat
+postRouter.get("/likes/:userId", async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const likedPosts = await Like.find({ userID: userId }).select("postID");
+        const likedPostIds = likedPosts.map(like => like.postID);
+        res.status(200).json(likedPostIds);
+    } catch (err) {
+        console.error("Fel vid hämtning av gillade inlägg:", err);
+        res.status(500).json({ error: "Kunde inte hämta gillade inlägg" });
     }
 });
 
@@ -110,38 +96,12 @@ postRouter.post("/:id/comment", async (req, res) => {
     }
 });
 
-// Hämta alla inlägg som en specifik användare har gillat
-postRouter.get("/likes/:userId", async (req, res) => {
-  try {
-    const { userID } = req.params;
-    const likes = await Like.find({ userID });
-    
-    // Returnera bara postId för varje like
-    const likedPostIds = likes.map(like => like.postID);
-    
-    res.status(200).json(likedPostIds);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Fel vid hämtning av gillade inlägg" });
-  }
-});
+
 
 // Skapa nytt inlägg med filuppladdning
 postRouter.post("/new", async (req, res) => {
   try {
-    //const { caption, userId, username } = req.body;
-    // let imageUrl = null;
 
-    // // Kontrollera om en fil laddats upp
-    // if (req.files && req.files.image) {
-    //   const image = req.files.image;
-    //   const uploadPath = path.join(process.cwd(), "uploads", image.name);
-
-    //   // Flytta filen till mappen uploads
-    //   await image.mv(uploadPath);
-
-    //   imageUrl = `http://192.168.1.140:3000/uploads/${image.name}`;
-    // }
 
     const { caption, userId, username, imageBase64, profileImageUrl } = req.body;
     let imageUrl = null;
