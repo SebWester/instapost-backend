@@ -80,6 +80,36 @@ postRouter.post("/:id/toggle-like", async (req, res) => {
     }
 });
 
+postRouter.post("/:id/comment", async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const { comment, userId, username} = req.body;
+        
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ error: "Inlägget hittades inte" });
+        }
+        
+        const newComment = {
+            text: comment,
+            username: username,
+            userId: userId
+        };
+        
+        post.comments.push(newComment);
+        await post.save();
+        
+        res.status(201).json({ 
+            message: "Kommentar lades till", 
+            comments: post.comments 
+        });
+        
+    } catch (err) {
+        console.error("Fel vid kommentar:", err);
+        res.status(500).json({ error: "Kunde inte lägga till kommentar" });
+    }
+});
+
 // Hämta alla inlägg som en specifik användare har gillat
 postRouter.get("/likes/:userId", async (req, res) => {
   try {
